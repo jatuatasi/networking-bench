@@ -1,0 +1,245 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Networking Flashcards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one centered study column; deck controls, then a single flip card, then pile buttons */
+:root{
+  --bg:#eef2f1; --panel:#ffffff; --ink:#15211f; --muted:#5b6b68; --line:#d3dcda;
+  --accent:#0f6b5e; --accent-ink:#ffffff; --chip:#e2ebe9;
+  --good:#1f8a4c; --good-bg:#e3f4ea; --warn:#b7791f; --warn-bg:#fbf0dc;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"Source Sans 3",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1716; --panel:#172221; --ink:#e4ecea; --muted:#94a6a2; --line:#2a3836;
+  --accent:#3fbfa8; --accent-ink:#06201b; --chip:#203030;
+  --good:#4cc982; --good-bg:#16301f; --warn:#e8b14f; --warn-bg:#352a14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1716; --panel:#172221; --ink:#e4ecea; --muted:#94a6a2; --line:#2a3836;
+  --accent:#3fbfa8; --accent-ink:#06201b; --chip:#203030;
+  --good:#4cc982; --good-bg:#16301f; --warn:#e8b14f; --warn-bg:#352a14; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:720px;margin:0 auto;display:grid;gap:18px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.9rem;letter-spacing:-.01em;margin:0;text-wrap:balance}
+h1 span{color:var(--accent)}
+.tag{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.label{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{font:600 .95rem var(--f-body);color:var(--ink);background:var(--chip);border:2px solid transparent;border-radius:8px;padding:7px 13px;cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--panel);color:var(--accent)}
+.controls{display:grid;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font:700 1rem var(--f-body);background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:11px 18px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.btn.good{background:var(--good);color:var(--accent-ink)}
+.btn.warn{background:var(--warn-bg);color:var(--warn);border:2px solid var(--warn)}
+.btn:disabled{opacity:.45;cursor:default}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.status{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-family:var(--f-mono);font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.progress{height:6px;background:var(--chip);border-radius:3px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--good);transition:width .3s}
+
+.scene{perspective:1400px}
+.card{position:relative;width:100%;min-height:300px;border:0;padding:0;background:none;cursor:pointer;text-align:left;font:inherit;color:inherit;transform-style:preserve-3d;transition:transform .45s ease;display:grid}
+.card.flipped{transform:rotateY(180deg)}
+.face{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px 24px;display:grid;align-content:center;gap:14px;min-width:0}
+.back{transform:rotateY(180deg);border-color:var(--accent)}
+.topic{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.front .q{font-family:var(--f-display);font-weight:600;font-size:1.45rem;line-height:1.3;margin:0;text-wrap:balance}
+.back .a{font-size:1.15rem;font-weight:600;margin:0;text-wrap:pretty}
+.back .x{margin:0;color:var(--muted);font-size:1rem}
+.tap{font-family:var(--f-mono);font-size:.75rem;color:var(--muted)}
+.pile{font-family:var(--f-mono);font-size:.72rem;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:5px;justify-self:start}
+.pile.k{background:var(--good-bg);color:var(--good)} .pile.l{background:var(--warn-bg);color:var(--warn)}
+.done{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px 24px;display:grid;gap:12px}
+.done h2{font-family:var(--f-display);font-weight:800;margin:0}
+.keys{font-size:.85rem;color:var(--muted)}
+kbd{font-family:var(--f-mono);font-size:.78rem;background:var(--chip);border-radius:4px;padding:1px 5px}
+@media (prefers-reduced-motion:reduce){.card,.progress i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Networking <span>Flashcards</span></h1>
+    <div class="tag">One request · 20 topics · ports</div>
+  </header>
+
+  <section class="controls" aria-label="Deck settings">
+    <div>
+      <div class="label">Deck</div>
+      <div class="seg" id="segPart">
+        <button type="button" data-v="all" aria-pressed="true">All</button>
+        <button type="button" data-v="1" aria-pressed="false">1 · Home</button>
+        <button type="button" data-v="2" aria-pressed="false">2 · Getting there</button>
+        <button type="button" data-v="3" aria-pressed="false">3 · Connection</button>
+        <button type="button" data-v="4" aria-pressed="false">4 · Servers</button>
+        <button type="button" data-v="ports" aria-pressed="false">Ports</button>
+      </div>
+    </div>
+    <div>
+      <div class="label">Show</div>
+      <div class="seg" id="segShow">
+        <button type="button" data-v="all" aria-pressed="true">Every card</button>
+        <button type="button" data-v="learning" aria-pressed="false">Still learning only</button>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn ghost" id="shuffleBtn" type="button">Shuffle</button>
+      <button class="btn ghost" id="resetBtn" type="button">Reset my piles</button>
+    </div>
+  </section>
+
+  <div class="status"><span id="pos">Card 1 of 1</span><span id="tally">0 known · 0 still learning</span></div>
+  <div class="progress"><i id="prog" style="width:0%"></i></div>
+
+  <div class="scene" id="scene">
+    <button class="card" id="card" type="button" aria-label="Flip card">
+      <div class="face front">
+        <span class="topic" id="fTopic"></span>
+        <p class="q" id="fQ"></p>
+        <span class="tap">Tap or press space to flip</span>
+      </div>
+      <div class="face back">
+        <span class="topic" id="bTopic"></span>
+        <p class="a" id="bA"></p>
+        <p class="x" id="bX"></p>
+        <span class="pile" id="bPile" hidden></span>
+      </div>
+    </button>
+  </div>
+
+  <div class="done" id="done" hidden>
+    <h2 id="doneTitle">Nothing in this pile</h2>
+    <p id="doneText" style="margin:0">Every card in this deck is marked as known.</p>
+    <div class="row"><button class="btn" id="showAllBtn" type="button">Show every card</button></div>
+  </div>
+
+  <div class="row" id="nav">
+    <button class="btn ghost" id="prevBtn" type="button">← Back</button>
+    <button class="btn warn" id="learnBtn" type="button">Still learning</button>
+    <button class="btn good" id="knowBtn" type="button">Got it</button>
+    <button class="btn ghost" id="nextBtn" type="button">Next →</button>
+  </div>
+  <p class="keys"><kbd>Space</kbd> flip · <kbd>←</kbd> <kbd>→</kbd> move · <kbd>K</kbd> got it · <kbd>L</kbd> still learning. Your piles are saved in this browser.</p>
+</div>
+
+<script>
+// p = part (1 Home, 2 Getting there, 3 Connection, 4 Servers, ports), t = topic, f = front, b = answer, x = reminder or analogy
+const CARDS = [
+{p:1,t:"IP address",f:"What is an IP address?",b:"A number that tells the network where a device can be reached right now.",x:"Like a mailing address. It changes when you move, like a phone switching from Wi-Fi to cell data."},
+{p:1,t:"IP address",f:"IPv4 vs IPv6: what do they look like?",b:"IPv4: four numbers 0–255 with dots (192.168.1.15). IPv6: longer, letters and numbers with colons (2001:db8::1).",x:"IPv4 has about 4 billion addresses and ran short. IPv6 has a nearly endless supply."},
+{p:1,t:"Private vs public",f:"What are the three private IP ranges?",b:"10.x.x.x · 172.16.x.x to 172.31.x.x · 192.168.x.x",x:"Private addresses only work inside a home or office. Everything else is public."},
+{p:1,t:"Private vs public",f:"What does 127.0.0.1 mean?",b:"Loopback (localhost): this same computer.",x:"Talking to yourself."},
+{p:1,t:"IP address",f:"What does an IP starting with 169.254 mean?",b:"APIPA. The computer couldn't reach a DHCP server and gave itself an address.",x:"Fix: check cable or Wi-Fi, then ipconfig /release and ipconfig /renew."},
+{p:1,t:"DNS",f:"What does DNS do?",b:"Turns a name like api.ridenow.com into the IP address computers use.",x:"Like your phone's contacts: tap \"Mom\" and it finds the number."},
+{p:1,t:"DNS",f:"Name the four main DNS record types.",b:"A = name to IPv4 · AAAA = name to IPv6 · CNAME = nickname for another name · MX = email server",x:"Quad-A is the IPv6 one."},
+{p:1,t:"DNS",f:"Ping 8.8.8.8 works, but websites by name don't. What's wrong?",b:"DNS.",x:"Try ipconfig /flushdns or check which DNS server the computer uses."},
+{p:1,t:"Ports",f:"IP address vs port: what does each find?",b:"IP finds the machine. The port finds the program on that machine.",x:"IP = the building. Port = the apartment number."},
+{p:1,t:"Ports",f:"\"It's running but nobody can connect.\" One common cause?",b:"It's only listening on localhost (127.0.0.1), or a firewall blocks the port.",x:"Running is not the same as reachable."},
+{p:1,t:"MAC address",f:"What is a MAC address?",b:"A hardware ID on a network card, used to deliver data inside the local network.",x:"12 hex characters like 3C-52-82-1A-2B-9F. First half = the maker."},
+{p:1,t:"ARP",f:"What does ARP do?",b:"Finds the MAC address that goes with an IP on the local network.",x:"\"Who's in seat 14?\" The owner raises their hand. Command: arp -a."},
+{p:1,t:"ARP",f:"To reach a server across the internet, whose MAC does your PC ARP for?",b:"The router's (default gateway's).",x:"The router is the exit door for anything outside the house."},
+{p:2,t:"Routing",f:"How does data cross the internet?",b:"Each router checks its routing table and passes it to the next hop.",x:"Like following road signs. Command: tracert shows every hop."},
+{p:2,t:"Routing",f:"Router vs switch?",b:"Router: connects different networks using IP (Layer 3). Switch: connects devices in one network using MAC (Layer 2).",x:"A favorite exam question."},
+{p:2,t:"NAT",f:"What does NAT do?",b:"Swaps private IPs for one public IP on the way out and keeps a table to send replies back.",x:"Like an office receptionist transferring callbacks to the right desk."},
+{p:2,t:"NAT",f:"How do you let outside traffic reach one device in your house?",b:"Port forwarding on the router.",x:"\"Anything on port 25565 goes to this one computer.\""},
+{p:2,t:"Subnetting",f:"What does a subnet mask do?",b:"Splits an IP into the network part (neighborhood) and host part (house).",x:"It tells a device what's local and what must go to the gateway."},
+{p:2,t:"Subnetting",f:"255.255.255.0 in CIDR notation?",b:"/24",x:"254 usable addresses, like 192.168.1.1 to 192.168.1.254."},
+{p:2,t:"DHCP",f:"What are the four DHCP steps?",b:"Discover, Offer, Request, Acknowledge (DORA).",x:"Hotel check-in: you get a room, a key card that expires, and directions."},
+{p:2,t:"DHCP",f:"What four settings does DHCP hand out?",b:"IP address, subnet mask, default gateway, DNS server.",x:"The address is a lease with an expiration time."},
+{p:3,t:"TCP",f:"TCP's key traits?",b:"Reliable, ordered, connection-based. Numbers pieces, gets receipts, resends what's lost.",x:"Tracked, signature-required shipping."},
+{p:3,t:"Handshake",f:"The TCP three-way handshake?",b:"SYN → SYN-ACK → ACK",x:"\"Can you hear me?\" \"Yes, can you?\" \"Yep.\" Closing uses FIN."},
+{p:3,t:"Handshake",f:"Connection timed out vs connection refused?",b:"Timed out = no answer (often a firewall or server off). Refused = machine reached, nothing listening on the port.",x:"Test with PowerShell: Test-NetConnection server -Port 443"},
+{p:3,t:"HTTPS & TLS",f:"What three things does TLS give you?",b:"Encryption, integrity, authentication.",x:"A locked box with a tamper seal, handed only to someone with official ID."},
+{p:3,t:"HTTPS & TLS",f:"Certificate warnings on almost every site. Check what first?",b:"The computer's date and time.",x:"A wrong clock makes every certificate look invalid."},
+{p:3,t:"HTTP",f:"GET vs POST?",b:"GET = give me something. POST = here's something new (like requesting a ride).",x:"PUT updates, DELETE removes."},
+{p:3,t:"HTTP",f:"HTTP 400s vs 500s?",b:"400s = problem with the request. 500s = problem on the server.",x:"200 OK · 403 Forbidden · 404 Not found · 500 Server error · 503 Unavailable"},
+{p:3,t:"UDP",f:"When is UDP the right choice?",b:"When live and fast matters more than perfect: calls, gaming, streaming, DNS.",x:"Live radio: if you miss a word, the DJ doesn't repeat it."},
+{p:3,t:"UDP",f:"What does UDP skip that TCP does?",b:"Handshake, receipts, resending and ordering.",x:"That's why it's fast and light."},
+{p:4,t:"Load balancer",f:"What does a load balancer do?",b:"Spreads requests across healthy servers, skipping any that fail health checks.",x:"The Costco worker pointing you to an open checkout lane."},
+{p:4,t:"Reverse proxy",f:"Forward proxy vs reverse proxy?",b:"Forward sits in front of users. Reverse sits in front of servers.",x:"A reverse proxy routes, handles TLS, caches, compresses, and hides the inside."},
+{p:4,t:"Firewall",f:"What does a firewall filter by?",b:"Source and destination IP, port, and protocol (TCP or UDP).",x:"A gate guard with a guest list. Not on the list, not getting in."},
+{p:4,t:"Firewall",f:"Host-based vs network firewall?",b:"Host-based protects one computer (Windows Defender Firewall). Network protects a whole network.",x:"Open Windows' rules with wf.msc."},
+{p:4,t:"WebSockets",f:"Why use a WebSocket?",b:"It keeps a connection open so the server can push updates without being asked.",x:"The GPS announcing turns instead of a kid asking \"Are we there yet?\""},
+{p:4,t:"OSI model",f:"OSI layers, bottom to top?",b:"1 Physical · 2 Data Link · 3 Network · 4 Transport · 5 Session · 6 Presentation · 7 Application",x:"Please Do Not Throw Sausage Pizza Away."},
+{p:4,t:"OSI model",f:"Which layer: switch, router, TCP/UDP?",b:"Switch = Layer 2 · Router = Layer 3 · TCP/UDP and ports = Layer 4",x:"Troubleshoot from the bottom up."},
+{p:"ports",t:"Ports",f:"20/21 · 22 · 23",b:"FTP · SSH · Telnet",x:"SSH is secure remote access. Telnet is the old insecure one."},
+{p:"ports",t:"Ports",f:"25 · 53 · 67/68",b:"SMTP (send email) · DNS · DHCP",x:"DNS and DHCP usually use UDP."},
+{p:"ports",t:"Ports",f:"69 · 80 · 110",b:"TFTP · HTTP · POP3",x:"POP3 receives email."},
+{p:"ports",t:"Ports",f:"143 · 161 · 443",b:"IMAP · SNMP · HTTPS",x:"IMAP receives email. SNMP monitors network devices."},
+{p:"ports",t:"Ports",f:"445 · 3389",b:"SMB (Windows file sharing) · RDP (Remote Desktop)",x:"Both show up constantly on the A+."}
+];
+const PART_NAMES = {1:"Part 1 · Home",2:"Part 2 · Getting there",3:"Part 3 · Connection",4:"Part 4 · Servers",ports:"Ports"};
+const KEY = "netbench-cards";
+const $ = id => document.getElementById(id);
+CARDS.forEach((c,i)=>c.id=i);
+
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||"{}"); }catch(e){ return {}; } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(piles)); }catch(e){} }
+let piles = load(); // id -> "k" known | "l" learning
+const st = {part:"all", show:"all"};
+let deck = [], i = 0;
+
+function build(keepShuffle){
+  deck = CARDS.filter(c => (st.part==="all" || String(c.p)===st.part) && (st.show==="all" || piles[c.id]!=="k"));
+  if(keepShuffle) deck = shuffle(deck);
+  i = 0; draw();
+}
+function shuffle(a){ a=a.slice(); for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]];} return a; }
+function draw(){
+  const inPart = CARDS.filter(c => st.part==="all" || String(c.p)===st.part);
+  const known = inPart.filter(c=>piles[c.id]==="k").length, learning = inPart.filter(c=>piles[c.id]==="l").length;
+  $("tally").textContent = `${known} known · ${learning} still learning · ${inPart.length} in deck`;
+  $("prog").style.width = (inPart.length ? known/inPart.length*100 : 0) + "%";
+  const empty = !deck.length;
+  $("scene").hidden = empty; $("nav").hidden = empty; $("done").hidden = !empty;
+  if(empty){ $("pos").textContent = "No cards"; return; }
+  const c = deck[i];
+  $("card").classList.remove("flipped");
+  $("pos").textContent = `Card ${i+1} of ${deck.length}`;
+  const topic = `${PART_NAMES[c.p]} · ${c.t}`;
+  $("fTopic").textContent = topic; $("bTopic").textContent = topic;
+  $("fQ").textContent = c.f; $("bA").textContent = c.b; $("bX").textContent = c.x;
+  const p = piles[c.id]; $("bPile").hidden = !p;
+  if(p){ $("bPile").className = "pile " + p; $("bPile").textContent = p==="k" ? "KNOWN" : "STILL LEARNING"; }
+  $("prevBtn").disabled = i===0;
+}
+function flip(){ $("card").classList.toggle("flipped"); }
+function move(d){ if(!deck.length) return; i = Math.max(0, Math.min(deck.length-1, i+d)); draw(); }
+function mark(v){
+  if(!deck.length) return;
+  const c = deck[i]; piles[c.id] = v; save();
+  if(st.show==="learning" && v==="k"){ deck.splice(i,1); if(i>=deck.length) i = Math.max(0, deck.length-1); draw(); }
+  else if(i < deck.length-1){ i++; draw(); } else draw();
+}
+function seg(id, key){
+  $(id).addEventListener("click", e=>{
+    const b = e.target.closest("button"); if(!b) return;
+    $(id).querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b));
+    st[key] = b.dataset.v; build(false);
+  });
+}
+seg("segPart","part"); seg("segShow","show");
+$("card").addEventListener("click", flip);
+$("prevBtn").addEventListener("click", ()=>move(-1));
+$("nextBtn").addEventListener("click", ()=>move(1));
+$("knowBtn").addEventListener("click", ()=>mark("k"));
+$("learnBtn").addEventListener("click", ()=>mark("l"));
+$("shuffleBtn").addEventListener("click", ()=>build(true));
+$("resetBtn").addEventListener("click", ()=>{ piles = {}; save(); build(false); });
+$("showAllBtn").addEventListener("click", ()=>{ st.show="all"; $("segShow").querySelectorAll("button").forEach((x,k)=>x.setAttribute("aria-pressed", k===0)); build(false); });
+document.addEventListener("keydown", e=>{
+  if(e.target.closest && e.target.closest(".seg, .controls")) return;
+  if(e.key===" "){ e.preventDefault(); flip(); }
+  else if(e.key==="ArrowRight") move(1);
+  else if(e.key==="ArrowLeft") move(-1);
+  else if(e.key==="k"||e.key==="K") mark("k");
+  else if(e.key==="l"||e.key==="L") mark("l");
+});
+build(false);
+</script>
+</body></html>

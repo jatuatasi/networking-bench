@@ -1,0 +1,608 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Networking Bench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one centered work column, like an exam terminal; setup → question → results */
+:root{
+  --bg:#eef2f1; --panel:#ffffff; --ink:#15211f; --muted:#5b6b68; --line:#d3dcda;
+  --accent:#0f6b5e; --accent-ink:#ffffff; --chip:#e2ebe9;
+  --good:#1f8a4c; --good-bg:#e3f4ea; --bad:#c23a32; --bad-bg:#fbe6e4; --warn:#b7791f; --warn-bg:#fbf0dc;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"Source Sans 3",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1716; --panel:#172221; --ink:#e4ecea; --muted:#94a6a2; --line:#2a3836;
+  --accent:#3fbfa8; --accent-ink:#06201b; --chip:#203030;
+  --good:#4cc982; --good-bg:#16301f; --bad:#f07a70; --bad-bg:#3a1c1a; --warn:#e8b14f; --warn-bg:#352a14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1716; --panel:#172221; --ink:#e4ecea; --muted:#94a6a2; --line:#2a3836;
+  --accent:#3fbfa8; --accent-ink:#06201b; --chip:#203030;
+  --good:#4cc982; --good-bg:#16301f; --bad:#f07a70; --bad-bg:#3a1c1a; --warn:#e8b14f; --warn-bg:#352a14; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:760px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.9rem;letter-spacing:-.01em;margin:0;text-wrap:balance}
+h1 span{color:var(--accent)}
+.tag{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+h2{font-family:var(--f-display);font-weight:600;font-size:1.2rem;margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;display:grid;gap:18px}
+.label{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{font:600 1rem var(--f-body);color:var(--ink);background:var(--chip);border:2px solid transparent;border-radius:8px;padding:9px 16px;cursor:pointer;min-width:64px}
+.seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--panel);color:var(--accent)}
+.seg button small{display:block;font-weight:400;font-size:.75rem;color:var(--muted)}
+.hint{color:var(--muted);font-size:.92rem;margin:6px 0 0}
+.btn{font:700 1.05rem var(--f-body);background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:13px 22px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+
+/* quiz */
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--f-mono);font-size:.85rem;color:var(--muted)}
+.timer{font-weight:700;color:var(--ink);background:var(--chip);padding:4px 10px;border-radius:6px;font-variant-numeric:tabular-nums}
+.timer.low{color:var(--bad);background:var(--bad-bg)}
+.progress{height:6px;background:var(--chip);border-radius:3px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.domain{display:inline-block;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--chip);padding:3px 8px;border-radius:5px}
+.question{font-size:1.2rem;font-weight:600;margin:0;text-wrap:pretty}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;font:1rem var(--f-body);color:var(--ink);background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt .key{font-family:var(--f-mono);font-weight:700;width:1.6em;flex:none;color:var(--muted)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--good);background:var(--good-bg)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.opt.right .key{color:var(--good)} .opt.wrong .key{color:var(--bad)}
+.verdict{font-family:var(--f-display);font-weight:800;font-size:1.15rem}
+.verdict.ok{color:var(--good)} .verdict.no{color:var(--bad)}
+.why{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.why li{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:10px 12px;border-radius:8px;background:var(--chip)}
+.why li.right{background:var(--good-bg)}
+.why b{font-family:var(--f-mono)}
+.why .r{color:var(--good)} .why .w{color:var(--bad)}
+.why p{margin:0}
+
+/* results */
+.score{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.big{font-family:var(--f-display);font-weight:800;font-size:4rem;line-height:1;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-family:var(--f-mono);font-weight:700;letter-spacing:.08em;padding:6px 12px;border-radius:6px}
+.pill.pass{background:var(--good-bg);color:var(--good)} .pill.fail{background:var(--bad-bg);color:var(--bad)}
+.chart{display:grid;gap:12px}
+.crow{display:grid;grid-template-columns:minmax(0,190px) 1fr 70px;gap:12px;align-items:center}
+@media (max-width:560px){.crow{grid-template-columns:1fr 64px}.crow .track{grid-column:1/-1;grid-row:2}}
+.crow .nm{font-weight:600;font-size:.95rem;min-width:0}
+.track{position:relative;height:22px;background:var(--chip);border-radius:5px;overflow:hidden}
+.track i{position:absolute;inset:0 auto 0 0;border-radius:5px}
+.track .mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink);opacity:.55}
+.crow .pc{font-family:var(--f-mono);font-size:.85rem;text-align:right;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:var(--c)}
+.missed{display:grid;gap:10px}
+.missed details{border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.missed summary{cursor:pointer;font-weight:600}
+.missed p{margin:8px 0 0}
+.hist{font-family:var(--f-mono);font-size:.85rem;color:var(--muted);display:grid;gap:4px;font-variant-numeric:tabular-nums}
+.note{background:var(--chip);border-radius:8px;padding:12px 14px;font-size:.95rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Networking <span>Bench</span></h1>
+    <div class="tag">One request · 20 topics · A+ / CCNA prep</div>
+  </header>
+
+  <!-- SETUP -->
+  <section id="setup" class="panel">
+    <h2>Set up your practice test</h2>
+    <div class="grid2">
+      <div>
+        <div class="label">How many questions</div>
+        <div class="seg" id="segCount">
+          <button type="button" data-v="10" aria-pressed="true">10</button>
+          <button type="button" data-v="20" aria-pressed="false">20</button>
+          <button type="button" data-v="30" aria-pressed="false">30</button>
+        </div>
+      </div>
+      <div>
+        <div class="label">Mode</div>
+        <div class="seg" id="segMode">
+          <button type="button" data-v="relax" aria-pressed="true">No timer</button>
+          <button type="button" data-v="timed" aria-pressed="false">Timer</button>
+        </div>
+        <p class="hint" id="timeHint">Take as long as you need.</p>
+      </div>
+      <div>
+        <div class="label">Focus</div>
+        <div class="seg" id="segCore">
+          <button type="button" data-v="all" aria-pressed="true">All parts</button>
+          <button type="button" data-v="1" aria-pressed="false">1 · Home</button>
+          <button type="button" data-v="2" aria-pressed="false">2 · Getting there</button>
+          <button type="button" data-v="3" aria-pressed="false">3 · Connection</button>
+          <button type="button" data-v="4" aria-pressed="false">4 · Servers</button>
+        </div>
+        <p class="hint" id="partHint">Questions from every stop on the ride request's trip.</p>
+      </div>
+      <div>
+        <div class="label">Passing score</div>
+        <div class="seg" id="segPass">
+          <button type="button" data-v="70" aria-pressed="false">70%</button>
+          <button type="button" data-v="80" aria-pressed="true">80%<small>recommended</small></button>
+          <button type="button" data-v="90" aria-pressed="false">90%</button>
+        </div>
+        <p class="hint">The real exam needs about 75% (Core 1) and 78% (Core 2). Practicing at 80% gives you a safety cushion.</p>
+      </div>
+    </div>
+    <div class="row"><button class="btn" id="startBtn" type="button">Start test</button></div>
+    <div id="histBox" hidden>
+      <div class="label">Your recent attempts (this browser)</div>
+      <div class="hist" id="hist"></div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="panel" hidden>
+    <div class="bar">
+      <span id="qnum">Question 1 of 10</span>
+      <span id="liveScore">0 correct</span>
+      <span class="timer" id="timer" hidden>10:00</span>
+    </div>
+    <div class="progress"><i id="prog" style="width:0%"></i></div>
+    <div><span class="domain" id="qdom"></span></div>
+    <p class="question" id="qtext"></p>
+    <div class="opts" id="opts"></div>
+    <div id="feedback" hidden>
+      <div class="verdict" id="verdict"></div>
+      <ul class="why" id="why"></ul>
+    </div>
+    <div class="row">
+      <button class="btn" id="nextBtn" type="button" hidden>Next question</button>
+      <button class="btn ghost" id="quitBtn" type="button">End test now</button>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="panel" hidden>
+    <div class="score">
+      <div class="big" id="pct">0%</div>
+      <div>
+        <span class="pill" id="passPill">PASS</span>
+        <p style="margin:8px 0 0" id="scoreLine"></p>
+      </div>
+    </div>
+    <div class="note" id="advice"></div>
+    <div>
+      <h2 style="margin-bottom:6px">Strengths and weak spots by topic</h2>
+      <div class="legend">
+        <span style="--c:var(--good)">Strong (80%+)</span>
+        <span style="--c:var(--warn)">Getting there (60–79%)</span>
+        <span style="--c:var(--bad)">Needs work (under 60%)</span>
+        <span>│ line = your passing score</span>
+      </div>
+    </div>
+    <div class="chart" id="chart"></div>
+    <div id="missedWrap">
+      <h2 style="margin-bottom:10px">Questions you missed</h2>
+      <div class="missed" id="missed"></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="againBtn" type="button">New test</button>
+      <button class="btn ghost" id="retryBtn" type="button">Retry only what I missed</button>
+    </div>
+  </section>
+</div>
+<script>
+// p = part of the trip (1 Home, 2 Getting there, 3 Connection, 4 Servers), d = topic,
+// a = index of the correct option, e = why each option is right or wrong
+const PARTS = {1:"Home", 2:"Getting there", 3:"Connection", 4:"Servers"};
+const PART_HINTS = {
+  all:"Questions from every stop on the ride request's trip.",
+  1:"IP addresses, private vs public, DNS, ports, MAC and ARP.",
+  2:"Routing, NAT, subnetting and DHCP.",
+  3:"TCP, the handshake, HTTPS and TLS, HTTP and UDP.",
+  4:"Load balancers, proxies, firewalls, WebSockets and the OSI model."
+};
+const BANK = [
+// ---- Part 1: IP addresses
+{p:1,d:"IP addresses",q:"What is the main job of an IP address?",
+ o:["Tell the network where a device can be reached right now","Identify the company that made the network card","Encrypt data before it leaves the device","Pick which program on a machine gets the data"],a:0,
+ e:["Correct. Like a mailing address, it tells the network where to deliver data and where replies should go.","That is part of a MAC address, not an IP address.","Encryption is TLS's job, not the IP address's.","Picking the program is the port's job."]},
+{p:1,d:"IP addresses",q:"Which of these is an IPv6 address?",
+ o:["192.168.1.15","2001:db8::1","3C-52-82-1A-2B-9F","255.255.255.0"],a:1,
+ e:["This is IPv4: four numbers from 0 to 255 separated by dots.","Correct. IPv6 is longer and uses letters and numbers separated by colons.","This is a MAC address: 12 hex characters in pairs.","This is a subnet mask, not an address."]},
+{p:1,d:"IP addresses",q:"Why was IPv6 created?",
+ o:["IPv4 was too slow","IPv4 couldn't encrypt data","IPv4 has only about 4 billion addresses and the world ran short","IPv4 didn't work over Wi-Fi"],a:2,
+ e:["Speed was not the reason. Both versions move data the same way.","Neither version encrypts data on its own. That's TLS.","Correct. Phones, laptops, servers and smart devices used up the IPv4 supply. IPv6 has a nearly endless pool.","IPv4 works fine over Wi-Fi."]},
+{p:1,d:"IP addresses",q:"Which address range is private?",
+ o:["8.8.8.8","172.40.1.1","203.0.113.10","10.20.30.40"],a:3,
+ e:["8.8.8.8 is a public DNS server run by Google.","172 is only private from 172.16 through 172.31, so 172.40 is public.","This is a public address.","Correct. Anything starting with 10 is private. The private ranges are 10.x, 172.16 to 172.31, and 192.168."]},
+{p:1,d:"IP addresses",q:"What does 127.0.0.1 always mean?",
+ o:["The default gateway","This same computer (loopback / localhost)","The DNS server","A broadcast to every device"],a:1,
+ e:["The gateway is your router, usually something like 192.168.1.1.","Correct. 127.0.0.1 is loopback. A program sending to it is talking to its own computer.","DNS servers have normal addresses like 8.8.8.8.","Broadcasts use a different special address."]},
+{p:1,d:"IP addresses",q:"A friend can't connect to your game server using 192.168.1.20. Why?",
+ o:["That address is private, so it only works inside your home network","The port number is wrong","The address is IPv6","DNS is down"],a:0,
+ e:["Correct. Private addresses can't be reached from the internet. You'd need your public IP plus port forwarding.","The port could be wrong too, but the address itself is already unreachable from outside.","192.168.1.20 is IPv4.","They're using an IP number, so DNS isn't involved."]},
+// ---- Part 1: DNS
+{p:1,d:"DNS",q:"In the rideshare story, what does DNS do?",
+ o:["Gives the phone its IP address","Turns the name api.ridenow.com into an IP address","Encrypts the ride request","Picks a healthy server"],a:1,
+ e:["That is DHCP's job.","Correct. The app only knows the name. DNS looks up the number computers actually use.","That's TLS.","That's the load balancer."]},
+{p:1,d:"DNS",q:"A user can ping 8.8.8.8 but can't open any website by name. What's the likely problem?",
+ o:["The network cable","DHCP","DNS","The firewall on port 443"],a:2,
+ e:["If the cable were bad, pinging 8.8.8.8 would fail too.","DHCP worked, or the computer couldn't ping out at all.","Correct. Numbers work, names don't. That points to DNS. Try ipconfig /flushdns or check the DNS server setting.","A blocked 443 would stop secure pages, but name lookups would still work."]},
+{p:1,d:"DNS",q:"Which DNS record turns a name into an IPv6 address?",
+ o:["A","MX","CNAME","AAAA"],a:3,
+ e:["An A record points to an IPv4 address.","MX says which server handles email for a domain.","CNAME is a nickname that points to another name.","Correct. AAAA (quad-A) points a name to an IPv6 address."]},
+{p:1,d:"DNS",q:"What does the TTL on a DNS answer control?",
+ o:["How long the answer can be saved before looking it up again","How many routers the lookup passes through","Which port DNS uses","How strong the encryption is"],a:0,
+ e:["Correct. TTL (time to live) is like an expiration date on the saved answer.","Routers use a different TTL counter on packets. The DNS TTL is about caching.","DNS uses port 53. TTL doesn't change that.","DNS TTL has nothing to do with encryption."]},
+{p:1,d:"DNS",q:"Which command clears a Windows computer's saved DNS answers?",
+ o:["ipconfig /release","ipconfig /flushdns","arp -a","tracert"],a:1,
+ e:["/release drops the DHCP address, not DNS answers.","Correct. ipconfig /flushdns clears the cache, a common help desk fix.","arp -a lists IP-to-MAC matches.","tracert shows the hops to a destination."]},
+// ---- Part 1: Ports
+{p:1,d:"Ports",q:"An IP address finds the machine. What does the port number find?",
+ o:["The router","The program or service on that machine","The DNS server","The MAC address"],a:1,
+ e:["Routers are found by IP address.","Correct. IP = the building, port = the apartment number.","DNS servers are found by IP address.","MAC addresses are found with ARP."]},
+{p:1,d:"Ports",q:"Which port does HTTPS use by default?",
+ o:["80","443","53","22"],a:1,
+ e:["80 is plain HTTP (not encrypted).","Correct. HTTPS is 443.","53 is DNS.","22 is SSH."]},
+{p:1,d:"Ports",q:"Which port does Remote Desktop (RDP) use?",
+ o:["3389","445","25","110"],a:0,
+ e:["Correct. RDP uses 3389.","445 is SMB (Windows file sharing).","25 is SMTP (sending email).","110 is POP3 (receiving email)."]},
+{p:1,d:"Ports",q:"Which port is used to SEND email?",
+ o:["143","110","25","21"],a:2,
+ e:["143 is IMAP, used to receive email.","110 is POP3, used to receive email.","Correct. SMTP on port 25 sends email.","21 is FTP."]},
+{p:1,d:"Ports",q:"Which port does SSH (secure remote command line) use?",
+ o:["23","22","69","161"],a:1,
+ e:["23 is Telnet, the old insecure version.","Correct. SSH is 22.","69 is TFTP.","161 is SNMP."]},
+{p:1,d:"Ports",q:"A program is running, but other computers can't connect. It's listening only on 127.0.0.1. What's wrong?",
+ o:["It only accepts connections from its own computer","The DNS record is missing","The MAC address is blocked","It's using UDP"],a:0,
+ e:["Correct. Listening on localhost means it's home with the door locked from inside. Running is not the same as reachable.","DNS wouldn't matter if they connect by IP.","MAC filtering blocks joining a network, not this.","The protocol isn't the issue here."]},
+// ---- Part 1: MAC & ARP
+{p:1,d:"MAC & ARP",q:"What is a MAC address used for?",
+ o:["Delivering data across the internet","Delivering data inside the local network","Encrypting traffic","Translating names to IPs"],a:1,
+ e:["Crossing the internet uses IP addresses.","Correct. MAC is the hardware address used to deliver data within one local network.","That's TLS.","That's DNS."]},
+{p:1,d:"MAC & ARP",q:"What does the first half of a MAC address identify?",
+ o:["The network the device is on","The company that made the network card","The device's owner","The router it connects to"],a:1,
+ e:["MAC addresses don't change between networks.","Correct. The first half is the maker's ID; the second half is that card's own number.","MAC addresses don't identify people.","The router has its own separate MAC."]},
+{p:1,d:"MAC & ARP",q:"What does ARP do?",
+ o:["Finds the MAC address that goes with an IP on the local network","Gives out IP addresses","Finds the IP for a website name","Blocks unwanted traffic"],a:0,
+ e:["Correct. It asks \"who has this IP?\" and the owner answers with its MAC.","That's DHCP.","That's DNS.","That's a firewall."]},
+{p:1,d:"MAC & ARP",q:"The phone wants to reach RideNow's server across the internet. Whose MAC address does it ARP for?",
+ o:["RideNow's server","The DNS server","The home router (default gateway)","Every device on the internet"],a:2,
+ e:["The server isn't on the local network, so its MAC is never needed.","DNS lookups don't change this.","Correct. Anything outside the house goes to the router first, so the phone needs the router's MAC.","ARP only works on the local network."]},
+{p:1,d:"MAC & ARP",q:"Which device uses MAC addresses to send data to the right port inside a network?",
+ o:["Router","Modem","Switch","Firewall"],a:2,
+ e:["Routers use IP addresses to move data between networks.","A modem converts the provider's signal.","Correct. A switch learns which MAC is on which port.","Firewalls filter by IP, port and protocol."]},
+{p:1,d:"MAC & ARP",q:"Which command shows the IP-to-MAC list on a Windows computer?",
+ o:["getmac","arp -a","netstat -an","route print"],a:1,
+ e:["getmac shows only your own MAC.","Correct. arp -a lists the IPs on your network and their MACs.","netstat shows connections and ports.","route print shows the routing table."]},
+// ---- Part 2: Routing
+{p:2,d:"Routing",q:"How does the ride request find its way across the internet?",
+ o:["The phone plans the whole route first","Each router sends it to the next hop using its routing table","DNS carries it","The load balancer guides it"],a:1,
+ e:["No device knows the full path.","Correct. Each router just picks the next stop, like following road signs.","DNS only looks up addresses.","The load balancer is inside RideNow, at the end of the trip."]},
+{p:2,d:"Routing",q:"Which command lists every hop between you and a website?",
+ o:["ping","nslookup","tracert","ipconfig"],a:2,
+ e:["ping only tells you if it's reachable and how fast.","nslookup looks up a name's IP.","Correct. tracert shows each hop and its time.","ipconfig shows your own settings."]},
+{p:2,d:"Routing",q:"What is a default route?",
+ o:["A catch-all rule: send anything not local to the next router","The fastest path to a website","The route DNS uses","A backup Wi-Fi network"],a:0,
+ e:["Correct. Your home router mostly says: anything not in this house goes to the internet company.","Routers don't pick the fastest path this way.","DNS uses normal routing.","This is about routing tables, not Wi-Fi."]},
+{p:2,d:"Routing",q:"Which device connects different networks using IP addresses?",
+ o:["Switch","Hub","Router","Access point"],a:2,
+ e:["Switches connect devices within one network using MAC.","Hubs just repeat data to every port.","Correct. Routers work at OSI layer 3 with IP addresses.","Access points connect Wi-Fi devices to the local network."]},
+// ---- Part 2: NAT
+{p:2,d:"NAT",q:"Five devices at home all share one public IP. What makes that work?",
+ o:["DNS","NAT","ARP","DHCP"],a:1,
+ e:["DNS looks up names.","Correct. The router swaps each private IP for the public one and keeps a table to send replies back.","ARP finds MAC addresses.","DHCP hands out the private addresses but doesn't share the public one."]},
+{p:2,d:"NAT",q:"When RideNow's reply comes back, how does the home router know which phone gets it?",
+ o:["It checks its NAT table","It asks DNS","It sends it to every device","The reply includes the phone's MAC"],a:0,
+ e:["Correct. The router wrote down who sent what, so it hands the reply to the right device.","DNS doesn't track connections.","It sends it only to the right device.","MAC addresses don't travel across the internet."]},
+{p:2,d:"NAT",q:"What do you set up on a router so outside traffic can reach one device inside the house?",
+ o:["DHCP reservation","Port forwarding","A new subnet mask","MAC filtering"],a:1,
+ e:["A reservation keeps a device's IP the same, but doesn't let outsiders in.","Correct. Port forwarding sends traffic on a certain port to one inside device.","Changing the mask doesn't open anything to outsiders.","MAC filtering controls who joins your network."]},
+{p:2,d:"NAT",q:"Home routers swap both the IP and the port. What's that version of NAT called?",
+ o:["DNAT","PAT (Port Address Translation)","APIPA","CIDR"],a:1,
+ e:["Not the term used here.","Correct. PAT lets many devices share one public IP by giving each conversation its own port.","APIPA is the 169.254 self-assigned address.","CIDR is the /24-style shorthand for subnet masks."]},
+// ---- Part 2: Subnetting
+{p:2,d:"Subnetting",q:"Subnet mask 255.255.255.0 is the same as which CIDR notation?",
+ o:["/8","/16","/24","/32"],a:2,
+ e:["/8 = 255.0.0.0.","/16 = 255.255.0.0.","Correct. /24 = 255.255.255.0.","/32 is a single address."]},
+{p:2,d:"Subnetting",q:"What does a subnet mask tell a device?",
+ o:["Which part of an IP is the network and which part is the host","Which port to use","How long the DHCP lease lasts","Which DNS server to ask"],a:0,
+ e:["Correct. It splits the address into neighborhood and house, so the device knows what's local.","Ports aren't part of the mask.","Lease time comes from DHCP.","The DNS server is a separate setting."]},
+{p:2,d:"Subnetting",q:"Your PC is 192.168.1.15 /24 and wants to reach 192.168.1.40. Where does it send the data?",
+ o:["To the default gateway","Directly to 192.168.1.40","To the DNS server","To the internet company"],a:1,
+ e:["The gateway is only for addresses outside the local network.","Correct. Same network part (192.168.1), so it sends directly using ARP for the MAC.","DNS isn't involved when you already have the IP.","It never leaves the house."]},
+{p:2,d:"Subnetting",q:"Why does RideNow put its database in its own subnet?",
+ o:["To make it faster","So rules can stop the internet from reaching it","Because databases need IPv6","So DHCP can find it"],a:1,
+ e:["Subnets are about boundaries, not speed.","Correct. Separate sections let you allow only the app servers to talk to the database.","Not related.","Servers usually have fixed addresses anyway."]},
+// ---- Part 2: DHCP
+{p:2,d:"DHCP",q:"What are the four DHCP steps, in order?",
+ o:["Discover, Offer, Request, Acknowledge","Request, Offer, Discover, Accept","SYN, SYN-ACK, ACK, FIN","Discover, Assign, Renew, Release"],a:0,
+ e:["Correct. Remember DORA.","Out of order.","That's the TCP handshake and close.","Not the DHCP steps."]},
+{p:2,d:"DHCP",q:"A PC has the address 169.254.12.40 and no internet. What happened?",
+ o:["It got a public IP","It couldn't reach a DHCP server and gave itself an address","DNS failed","The firewall blocked it"],a:1,
+ e:["169.254 is never public.","Correct. That's APIPA. Check the cable or Wi-Fi, then try ipconfig /release and /renew.","DNS problems don't change your IP.","A firewall doesn't change your IP either."]},
+{p:2,d:"DHCP",q:"Which ports does DHCP use?",
+ o:["53 and 54","67 and 68","80 and 443","20 and 21"],a:1,
+ e:["53 is DNS.","Correct. 67 for the server, 68 for the client.","Web traffic.","FTP."]},
+{p:2,d:"DHCP",q:"Which four settings does DHCP usually hand out?",
+ o:["IP address, subnet mask, default gateway, DNS server","MAC address, port, password, Wi-Fi name","Public IP, private IP, NAT table, TTL","Certificate, key, port, protocol"],a:0,
+ e:["Correct. Everything a device needs to start talking on the network.","MAC is built into the hardware, and passwords aren't DHCP's job.","DHCP doesn't hand out public IPs or NAT tables.","Those are TLS concepts."]},
+{p:2,d:"DHCP",q:"Which commands drop a computer's address and request a new one?",
+ o:["ipconfig /flushdns and /displaydns","ipconfig /release and /renew","arp -a and getmac","ping and tracert"],a:1,
+ e:["Those are for the DNS cache.","Correct. One of the most common help desk fixes.","Those show MAC information.","Those test reachability."]},
+// ---- Part 3: TCP & handshake
+{p:3,d:"TCP & handshake",q:"What is the correct order of the TCP three-way handshake?",
+ o:["SYN, SYN-ACK, ACK","ACK, SYN, SYN-ACK","SYN, ACK, FIN","SYN-ACK, SYN, ACK"],a:0,
+ e:["Correct. \"Can you hear me?\" \"Yes, can you?\" \"Yep.\"","Out of order.","FIN closes a connection.","The client always starts with SYN."]},
+{p:3,d:"TCP & handshake",q:"Why does the ride request use TCP?",
+ o:["It's faster than UDP","It must arrive complete and in order","It doesn't need a handshake","It works without IP"],a:1,
+ e:["UDP is actually faster.","Correct. TCP numbers pieces, gets receipts and resends anything lost.","TCP does use a handshake.","TCP runs on top of IP."]},
+{p:3,d:"TCP & handshake",q:"An app says \"connection refused.\" What does that tell you?",
+ o:["A firewall silently dropped it","The machine answered, but nothing is listening on that port","DNS failed","No IP address"],a:1,
+ e:["A silent drop shows up as a timeout, not refused.","Correct. The server was reached and said no. The app is stopped or on another port.","DNS failure gives a name-lookup error.","Without an IP you couldn't reach anything."]},
+{p:3,d:"TCP & handshake",q:"An app says \"connection timed out.\" What's a common cause?",
+ o:["The app is listening on the wrong port","A firewall is dropping the traffic or the server is off","The password is wrong","The page was not found"],a:1,
+ e:["That usually gives \"refused.\"","Correct. Timed out = no answer came back at all.","A wrong password still connects, then fails to log in.","That's a 404, which means the connection worked."]},
+{p:3,d:"TCP & handshake",q:"Users say \"everything is slow\" on weak Wi-Fi, but nothing errors out. What is TCP doing?",
+ o:["Resending lost pieces","Switching to UDP","Changing the IP address","Dropping the connection"],a:0,
+ e:["Correct. Lost pieces get resent, so it still works, just slowly.","TCP never switches to UDP.","The IP stays the same.","It keeps the connection and keeps retrying."]},
+// ---- Part 3: HTTPS & TLS
+{p:3,d:"HTTPS & TLS",q:"What three protections does TLS provide?",
+ o:["Speed, caching, compression","Encryption, integrity, authentication","Routing, NAT, DNS","Addressing, ports, handshakes"],a:1,
+ e:["Those are reverse proxy jobs.","Correct. Nobody can read it, changes are detected, and you know the server is real.","Those are other networking pieces.","Those belong to IP and TCP."]},
+{p:3,d:"HTTPS & TLS",q:"A user gets \"Your connection is not private\" on almost every website. Check first:",
+ o:["The computer's date and time","The subnet mask","The ARP table","The DHCP lease"],a:0,
+ e:["Correct. A wrong clock makes every certificate look expired or not yet valid.","Wouldn't cause certificate warnings.","Not related to certificates.","Not related to certificates."]},
+{p:3,d:"HTTPS & TLS",q:"What does a website's certificate prove?",
+ o:["The site is fast","The site is really who it says it is","The site has no viruses","The user is logged in"],a:1,
+ e:["Certificates don't measure speed.","Correct. It's a digital ID card signed by a trusted Certificate Authority.","It proves identity, not safety of the content.","Logging in is separate."]},
+{p:3,d:"HTTPS & TLS",q:"When the reverse proxy unlocks the encryption so app servers don't have to, it's called:",
+ o:["Port forwarding","TLS termination","Load balancing","Packet filtering"],a:1,
+ e:["Port forwarding is a NAT feature.","Correct. TLS is ended at the front door.","Load balancing spreads traffic.","That's a firewall concept."]},
+// ---- Part 3: HTTP
+{p:3,d:"HTTP",q:"Which HTTP method fits \"request a new ride\"?",
+ o:["GET","POST","DELETE","HEAD"],a:1,
+ e:["GET asks for something that already exists.","Correct. POST sends something new to the server.","DELETE removes something.","HEAD asks for headers only."]},
+{p:3,d:"HTTP",q:"What does a 404 status code mean?",
+ o:["OK","Forbidden","Not found","Server error"],a:2,
+ e:["OK is 200.","Forbidden is 403.","Correct. The link is wrong or the page was removed.","Server error is 500."]},
+{p:3,d:"HTTP",q:"A user sees error 500 on a company website. Whose problem is it?",
+ o:["The user's computer","The website's server","The user's Wi-Fi","The user's DNS"],a:1,
+ e:["500s are server-side.","Correct. 500s mean the server broke. 400s mean the request had a problem.","If Wi-Fi failed, there'd be no response at all.","The site answered, so DNS worked."]},
+{p:3,d:"HTTP",q:"How can you see each request's method and status code in Chrome or Edge?",
+ o:["F12, then the Network tab","Ctrl+P","Settings, then Privacy","Right-click, then Save as"],a:0,
+ e:["Correct. Reload the page and watch every request appear.","That's print.","Not where requests are shown.","That saves the page."]},
+// ---- Part 3: UDP
+{p:3,d:"UDP",q:"Which is the best fit for UDP?",
+ o:["Downloading a file","Sending a ride request","A live video call","Sending an email"],a:2,
+ e:["Every byte matters, so TCP.","Must arrive complete, so TCP.","Correct. Live beats perfect; a small glitch is better than freezing.","Email uses TCP."]},
+{p:3,d:"UDP",q:"Which service usually uses UDP?",
+ o:["SSH","DNS","HTTPS","RDP"],a:1,
+ e:["SSH uses TCP.","Correct. DNS queries are small and quick, so UDP fits (port 53).","HTTPS uses TCP.","RDP mainly uses TCP 3389."]},
+{p:3,d:"UDP",q:"What does UDP NOT do?",
+ o:["Use ports","Run over IP","Resend lost data","Carry voice calls"],a:2,
+ e:["UDP does use ports.","UDP runs over IP like TCP.","Correct. No handshake, no receipts, no resending.","Voice calls often use UDP."]},
+{p:3,d:"UDP",q:"Choppy calls and robotic voices usually point to:",
+ o:["Lost UDP packets from weak Wi-Fi or an overloaded connection","A wrong DNS server","An expired certificate","A missing default route"],a:0,
+ e:["Correct. UDP doesn't resend, so lost pieces show up as glitches.","DNS problems stop the call from starting.","That would block the connection entirely.","No route means no call at all."]},
+// ---- Part 4: Load balancers & proxies
+{p:4,d:"Balancers & proxies",q:"What is the main job of a load balancer?",
+ o:["Encrypt data","Spread traffic across healthy servers","Hand out IP addresses","Push live updates"],a:1,
+ e:["That's TLS.","Correct. It also skips servers that fail their health checks.","That's DHCP.","That's WebSockets."]},
+{p:4,d:"Balancers & proxies",q:"A site works on one refresh and fails on the next, over and over. A likely cause:",
+ o:["One server behind the load balancer is broken","The user's IP changed","DNS TTL expired","The cable is loose"],a:0,
+ e:["Correct. Some requests land on the bad server, some on good ones.","An IP change wouldn't cause this pattern.","Expiring cache just triggers a new lookup.","A loose cable fails everything, not every other try."]},
+{p:4,d:"Balancers & proxies",q:"What's the difference between a forward proxy and a reverse proxy?",
+ o:["Forward sits in front of users; reverse sits in front of servers","They're the same","Forward is for email; reverse is for web","Reverse is only for UDP"],a:0,
+ e:["Correct. A company web filter is a forward proxy. RideNow's front door is a reverse proxy.","They protect opposite sides.","Not how they differ.","Not related to UDP."]},
+{p:4,d:"Balancers & proxies",q:"Error 502 Bad Gateway usually means:",
+ o:["The user typed the wrong address","The proxy is up, but the server behind it gave a bad answer","The user isn't logged in","DNS failed"],a:1,
+ e:["That would be a 404 or a DNS error.","Correct. The front door works; the server behind it doesn't.","That's 401.","The site answered, so DNS worked."]},
+// ---- Part 4: Firewalls
+{p:4,d:"Firewalls",q:"What does a firewall filter traffic by?",
+ o:["Source and destination IP, port, and protocol","Website colors","File size only","The user's name"],a:0,
+ e:["Correct. Then it allows or denies.","No.","No.","Basic firewalls don't look at user names."]},
+{p:4,d:"Firewalls",q:"What is implicit deny?",
+ o:["Anything not allowed by a rule is blocked","Everything is allowed until blocked","Only UDP is blocked","Only outbound traffic is blocked"],a:0,
+ e:["Correct. If no rule says allow, it's blocked.","That's the opposite.","Not what it means.","Not what it means."]},
+{p:4,d:"Firewalls",q:"Windows Defender Firewall is an example of a:",
+ o:["Network firewall","Host-based firewall","Reverse proxy","Load balancer"],a:1,
+ e:["A network firewall protects a whole network.","Correct. It's software protecting one computer.","No.","No."]},
+{p:4,d:"Firewalls",q:"Why can't a passenger connect directly to RideNow's database?",
+ o:["Firewall rules deny internet traffic to it","The database uses IPv6","DNS has no record","The load balancer is down"],a:0,
+ e:["Correct. Only the app servers are allowed to reach it.","IPv6 wouldn't block it by itself.","Even with a record, the firewall would block it.","That would stop everything, not just the database."]},
+// ---- Part 4: WebSockets
+{p:4,d:"WebSockets",q:"Why does RideNow use a WebSocket for the driver's live location?",
+ o:["It lets the server push updates without being asked","It's encrypted and HTTP isn't","It uses less battery than Wi-Fi","It replaces DNS"],a:0,
+ e:["Correct. The line stays open, so updates flow as the car moves.","HTTPS is encrypted too.","Not the reason.","Not related."]},
+{p:4,d:"WebSockets",q:"Before WebSockets, apps asked \"any update?\" every few seconds. What's that called?",
+ o:["Polling","Routing","Caching","Tunneling"],a:0,
+ e:["Correct. Polling is wasteful and updates arrive late.","Routing moves data between networks.","Caching saves answers.","Not the term."]},
+// ---- Part 4: OSI & troubleshooting
+{p:4,d:"OSI & troubleshooting",q:"Which OSI layer handles IP addresses and routers?",
+ o:["Layer 2, Data Link","Layer 3, Network","Layer 4, Transport","Layer 7, Application"],a:1,
+ e:["Layer 2 is MAC addresses and switches.","Correct. Please Do Not... N is the third.","Layer 4 is TCP, UDP and ports.","Layer 7 is HTTP, DNS and apps."]},
+{p:4,d:"OSI & troubleshooting",q:"At which OSI layer do TCP, UDP and ports live?",
+ o:["Layer 3","Layer 4","Layer 5","Layer 6"],a:1,
+ e:["Layer 3 is IP.","Correct. Transport.","Layer 5 is Session.","Layer 6 is Presentation."]},
+{p:4,d:"OSI & troubleshooting",q:"What are the OSI layers from bottom to top?",
+ o:["Physical, Data Link, Network, Transport, Session, Presentation, Application","Application, Presentation, Session, Transport, Network, Data Link, Physical","Physical, Network, Data Link, Session, Transport, Application, Presentation","Data Link, Physical, Transport, Network, Session, Application, Presentation"],a:0,
+ e:["Correct. Please Do Not Throw Sausage Pizza Away.","That's top to bottom.","Out of order.","Out of order."]},
+{p:4,d:"OSI & troubleshooting",q:"\"I can't get online.\" Following bottom-up troubleshooting, what do you check first?",
+ o:["Is the cable plugged in or Wi-Fi connected?","Is DNS working?","Is the website down?","Is the certificate valid?"],a:0,
+ e:["Correct. Start at Layer 1, the physical connection.","Check that later, at the top.","Check that last.","Check that later."]},
+{p:4,d:"OSI & troubleshooting",q:"A switch works at which OSI layer?",
+ o:["Layer 1","Layer 2","Layer 3","Layer 7"],a:1,
+ e:["Layer 1 is cables and signals.","Correct. Data Link, using MAC addresses.","Layer 3 is routers.","Layer 7 is apps."]},
+{p:4,d:"OSI & troubleshooting",q:"Which PowerShell command tests whether you can connect to a specific port?",
+ o:["Get-Process","Test-NetConnection server -Port 443","Get-Help","Set-Location"],a:1,
+ e:["Lists running programs.","Correct. TcpTestSucceeded: True means the handshake worked.","Shows help.","Changes folders."]}
+];
+
+const $ = id => document.getElementById(id);
+const state = {count:10, mode:"relax", core:"all", pass:80};
+let run = null, tick = null;
+const HIST_KEY = "netbench-hist";
+
+function store(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||"null"); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+
+function seg(id, key, cb){
+  const box = $(id);
+  box.addEventListener("click", e=>{
+    const b = e.target.closest("button"); if(!b) return;
+    box.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b));
+    state[key] = isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v;
+    cb && cb();
+  });
+}
+function pool(){ return BANK.filter(q => state.core==="all" || String(q.p)===String(state.core)); }
+function updateHint(){
+  const n = Math.min(state.count, pool().length);
+  $("timeHint").textContent = state.mode==="timed"
+    ? `You get ${n} minutes (1 minute per question, the same pace as the real exam).`
+    : "Take as long as you need.";
+  const size = pool().length;
+  $("partHint").textContent = PART_HINTS[state.core] + ` ${size} questions in this set` + (state.count>size ? `, so a round uses all ${size}.` : ".");
+}
+seg("segCount","count",updateHint); seg("segMode","mode",updateHint); seg("segCore","core",updateHint); seg("segPass","pass");
+
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function show(id){ ["setup","quiz","results"].forEach(s=>$(s).hidden = s!==id); window.scrollTo({top:0}); }
+
+function start(retry){
+  let qs;
+  if(retry){ qs = shuffle(retry); }
+  else{ const src = pool(); qs = shuffle(src).slice(0, Math.min(state.count, src.length)); }
+  run = { qs: qs.map(q=>({...q, order: shuffle([0,1,2,3])})), i:0, answers:[], timed: state.mode==="timed" };
+  if(run.timed){
+    run.left = run.qs.length*60;
+    $("timer").hidden = false; drawTimer();
+    clearInterval(tick); tick = setInterval(()=>{ run.left--; drawTimer(); if(run.left<=0){ clearInterval(tick); finish(true); } },1000);
+  } else { $("timer").hidden = true; clearInterval(tick); }
+  show("quiz"); drawQ();
+}
+function drawTimer(){
+  const m = Math.floor(run.left/60), s = run.left%60;
+  $("timer").textContent = `⏱ ${m}:${String(s).padStart(2,"0")}`;
+  $("timer").classList.toggle("low", run.left<=60);
+}
+function drawQ(){
+  const q = run.qs[run.i], n = run.qs.length;
+  $("qnum").textContent = `Question ${run.i+1} of ${n}`;
+  $("liveScore").textContent = `${run.answers.filter(a=>a.ok).length} correct`;
+  $("prog").style.width = (run.i/n*100)+"%";
+  $("qdom").textContent = `Part ${q.p} · ${PARTS[q.p]} · ${q.d}`;
+  $("qtext").textContent = q.q;
+  $("feedback").hidden = true; $("nextBtn").hidden = true;
+  const box = $("opts"); box.innerHTML = "";
+  q.order.forEach((orig, k)=>{
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "opt"; b.dataset.orig = orig;
+    b.innerHTML = `<span class="key">${"ABCD"[k]}</span><span></span>`;
+    b.lastChild.textContent = q.o[orig];
+    b.addEventListener("click", ()=>answer(orig));
+    box.appendChild(b);
+  });
+}
+function answer(orig){
+  const q = run.qs[run.i], ok = orig===q.a;
+  run.answers.push({q, pick:orig, ok});
+  document.querySelectorAll(".opt").forEach(b=>{
+    b.disabled = true;
+    const o = +b.dataset.orig;
+    if(o===q.a) b.classList.add("right");
+    else if(o===orig) b.classList.add("wrong");
+  });
+  $("verdict").className = "verdict " + (ok?"ok":"no");
+  $("verdict").textContent = ok ? "✓ Correct!" : `✗ Not quite. The right answer is ${"ABCD"[q.order.indexOf(q.a)]}.`;
+  const ul = $("why"); ul.innerHTML = "";
+  q.order.forEach((o,k)=>{
+    const li = document.createElement("li"); if(o===q.a) li.className="right";
+    li.innerHTML = `<b class="${o===q.a?"r":"w"}">${"ABCD"[k]} ${o===q.a?"✓":"✗"}</b><p></p>`;
+    li.querySelector("p").textContent = q.e[o]; ul.appendChild(li);
+  });
+  $("feedback").hidden = false;
+  $("liveScore").textContent = `${run.answers.filter(a=>a.ok).length} correct`;
+  $("nextBtn").textContent = run.i===run.qs.length-1 ? "See my score" : "Next question";
+  $("nextBtn").hidden = false; $("nextBtn").focus();
+}
+$("nextBtn").addEventListener("click", ()=>{ if(run.i < run.qs.length-1){ run.i++; drawQ(); } else finish(false); });
+$("quitBtn").addEventListener("click", ()=>finish(false, true));
+$("startBtn").addEventListener("click", ()=>start());
+$("againBtn").addEventListener("click", ()=>{ drawHist(); show("setup"); });
+$("retryBtn").addEventListener("click", ()=>{ const miss = run.missed; if(miss.length) start(miss.map(({order,...q})=>q)); });
+
+function finish(timeUp, quit){
+  clearInterval(tick);
+  const total = run.qs.length;
+  const answered = new Set(run.answers.map(a=>a.q));
+  run.qs.forEach(q=>{ if(!answered.has(q)) run.answers.push({q, pick:null, ok:false}); });
+  const right = run.answers.filter(a=>a.ok).length;
+  const pct = Math.round(right/total*100);
+  const passed = pct >= state.pass;
+  run.missed = run.answers.filter(a=>!a.ok).map(a=>a.q);
+
+  $("pct").textContent = pct+"%";
+  $("passPill").className = "pill " + (passed?"pass":"fail");
+  $("passPill").textContent = passed ? "PASS" : "NOT YET";
+  let line = `${right} of ${total} correct. Passing score: ${state.pass}%.`;
+  if(timeUp) line += " Time ran out, so unanswered questions count as wrong.";
+  else if(quit && run.answers.some(a=>a.pick===null)) line += " You ended early, so unanswered questions count as wrong.";
+  $("scoreLine").textContent = line;
+
+  const by = {};
+  run.answers.forEach(a=>{ const k=a.q.d; by[k] ??= {r:0,t:0}; by[k].t++; if(a.ok) by[k].r++; });
+  const rows = Object.entries(by).map(([d,v])=>({d,...v,p:Math.round(v.r/v.t*100)})).sort((a,b)=>a.p-b.p);
+  const chart = $("chart"); chart.innerHTML="";
+  rows.forEach(r=>{
+    const col = r.p>=80?"var(--good)":r.p>=60?"var(--warn)":"var(--bad)";
+    const div = document.createElement("div"); div.className="crow";
+    div.innerHTML = `<div class="nm"></div><div class="track"><i style="width:${Math.max(r.p,2)}%;background:${col}"></i><span class="mark" style="left:${state.pass}%"></span></div><div class="pc">${r.r}/${r.t} · ${r.p}%</div>`;
+    div.querySelector(".nm").textContent = r.d;
+    chart.appendChild(div);
+  });
+  const weak = rows.filter(r=>r.p<60).map(r=>r.d), strong = rows.filter(r=>r.p>=80).map(r=>r.d);
+  let adv = "";
+  if(strong.length) adv += `Strong: ${strong.join(", ")}. `;
+  if(weak.length) adv += `Study next: ${weak.join(", ")}. The notes have a section for each.`;
+  else if(!passed) adv += "No single topic is way behind. Keep practicing to push your overall score up.";
+  else adv += "Nice work. Try a 30-question timed round to build exam stamina.";
+  $("advice").textContent = adv;
+
+  const mw = $("missed"); mw.innerHTML="";
+  $("missedWrap").hidden = !run.missed.length; $("retryBtn").hidden = !run.missed.length;
+  run.answers.filter(a=>!a.ok).forEach(a=>{
+    const d = document.createElement("details");
+    d.innerHTML = `<summary></summary><p><b>Your answer:</b> <span class="y"></span></p><p><b>Right answer:</b> <span class="c"></span></p><p class="x"></p>`;
+    d.querySelector("summary").textContent = a.q.q;
+    d.querySelector(".y").textContent = a.pick===null ? "(not answered)" : a.q.o[a.pick];
+    d.querySelector(".c").textContent = a.q.o[a.q.a];
+    d.querySelector(".x").textContent = a.q.e[a.q.a];
+    mw.appendChild(d);
+  });
+
+  const h = store(HIST_KEY) || [];
+  h.unshift({when:new Date().toLocaleDateString(), n:total, pct, pass:state.pass, timed:run.timed});
+  store(HIST_KEY, h.slice(0,8));
+  show("results");
+}
+function drawHist(){
+  const h = store(HIST_KEY) || [];
+  $("histBox").hidden = !h.length;
+  $("hist").innerHTML = "";
+  h.forEach(x=>{ const d=document.createElement("div");
+    d.textContent = `${x.when}  ·  ${String(x.n).padStart(2)} questions  ·  ${x.timed?"timed  ":"untimed"}  ·  ${String(x.pct).padStart(3)}%  ${x.pct>=x.pass?"PASS":"not yet"}`;
+    $("hist").appendChild(d); });
+}
+updateHint();
+drawHist();
+</script>
+</body></html>
