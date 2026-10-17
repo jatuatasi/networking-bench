@@ -1,0 +1,168 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Ride Request Journey</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: the trip map on top, step reader below; same palette as Networking Bench */
+:root{
+  --bg:#eef2f1; --panel:#ffffff; --ink:#15211f; --muted:#5b6b68; --line:#d3dcda; --dash:#9fb0ad;
+  --accent:#0f6b5e; --accent-ink:#ffffff; --chip:#e2ebe9;
+  --home-f:#EEEDFE; --home-s:#534AB7; --home-t:#3C3489;
+  --net-f:#F1EFE8; --net-s:#5F5E5A; --net-t:#444441;
+  --rn-f:#E1F5EE; --rn-s:#0F6E56; --rn-t:#085041;
+  --dot:#EF9F27; --dot-s:#854F0B;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"Source Sans 3",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1716; --panel:#172221; --ink:#e4ecea; --muted:#94a6a2; --line:#2a3836; --dash:#3d504d;
+  --accent:#3fbfa8; --accent-ink:#06201b; --chip:#203030;
+  --home-f:#26215C; --home-s:#AFA9EC; --home-t:#EEEDFE;
+  --net-f:#2C2C2A; --net-s:#B4B2A9; --net-t:#F1EFE8;
+  --rn-f:#04342C; --rn-s:#5DCAA5; --rn-t:#E1F5EE; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1716; --panel:#172221; --ink:#e4ecea; --muted:#94a6a2; --line:#2a3836; --dash:#3d504d;
+  --accent:#3fbfa8; --accent-ink:#06201b; --chip:#203030;
+  --home-f:#26215C; --home-s:#AFA9EC; --home-t:#EEEDFE;
+  --net-f:#2C2C2A; --net-s:#B4B2A9; --net-t:#F1EFE8;
+  --rn-f:#04342C; --rn-s:#5DCAA5; --rn-t:#E1F5EE; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:760px;margin:0 auto;display:grid;gap:18px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.9rem;letter-spacing:-.01em;margin:0;text-wrap:balance}
+h1 span{color:var(--accent)}
+.tag{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.map{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto}
+.map svg{display:block;width:100%;min-width:560px;height:auto}
+.zone{fill:none;stroke:var(--dash);stroke-dasharray:5 5}
+.zl{fill:var(--ink);font:700 13px var(--f-body)}
+.arr{stroke:var(--muted);stroke-width:1.5;fill:none}
+.nd{transition:opacity .35s}
+.nd.dim{opacity:.2}
+.home rect{fill:var(--home-f);stroke:var(--home-s)} .home .t{fill:var(--home-t)} .home .s{fill:var(--home-s)}
+.net rect{fill:var(--net-f);stroke:var(--net-s)} .net .t{fill:var(--net-t)} .net .s{fill:var(--net-s)}
+.rn rect{fill:var(--rn-f);stroke:var(--rn-s)} .rn .t{fill:var(--rn-t)} .rn .s{fill:var(--rn-s)}
+.t{font:700 14px var(--f-body);text-anchor:middle;dominant-baseline:central}
+.s{font:400 12px var(--f-body);text-anchor:middle;dominant-baseline:central}
+#dot{fill:var(--dot);stroke:var(--dot-s);transition:transform .5s ease}
+.reader{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;display:grid;gap:12px}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.count{font-family:var(--f-mono);font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.btn{font:700 1rem var(--f-body);background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 18px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h2{font-family:var(--f-display);font-weight:800;font-size:1.35rem;margin:0;text-wrap:balance}
+.lab{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.blk{display:grid;gap:2px}
+.blk p{margin:0;max-width:65ch}
+.blk.story p{color:var(--muted)}
+.dots{display:flex;flex-wrap:wrap;gap:6px}
+.dots button{width:30px;height:30px;border-radius:6px;border:1px solid var(--line);background:var(--chip);color:var(--ink);font:600 .8rem var(--f-mono);cursor:pointer;padding:0}
+.dots button[aria-current="step"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.keys{font-size:.85rem;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:reduce){#dot,.nd{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Ride Request <span>Journey</span></h1>
+    <div class="tag">Follow one tap · 20 topics</div>
+  </header>
+
+  <div class="map">
+    <svg viewBox="0 0 680 390" role="img" aria-labelledby="mapTitle mapDesc">
+      <title id="mapTitle">RideNow request journey</title>
+      <desc id="mapDesc">Phone and home router, three internet routers and a DNS server, then RideNow's firewall, load balancer, reverse proxy, app server and private database.</desc>
+      <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <rect class="zone" x="20" y="30" width="170" height="345" rx="12"/>
+      <rect class="zone" x="210" y="30" width="110" height="345" rx="12"/>
+      <rect class="zone" x="340" y="30" width="320" height="345" rx="12"/>
+      <text class="zl" x="105" y="54" text-anchor="middle">Passenger's home</text>
+      <text class="zl" x="265" y="54" text-anchor="middle">Internet</text>
+      <text class="zl" x="500" y="54" text-anchor="middle">RideNow</text>
+      <g class="arr" marker-end="url(#arrow)">
+        <line x1="105" y1="148" x2="105" y2="246"/><line x1="172" y1="278" x2="222" y2="280"/>
+        <line x1="265" y1="258" x2="265" y2="226"/><line x1="265" y1="178" x2="265" y2="146"/>
+        <line x1="307" y1="118" x2="356" y2="104"/><line x1="500" y1="126" x2="500" y2="146"/>
+        <line x1="500" y1="194" x2="500" y2="214"/><line x1="425" y1="262" x2="425" y2="288"/>
+        <line x1="492" y1="318" x2="510" y2="318"/>
+      </g>
+      <g id="phone" class="nd home"><rect x="40" y="90" width="130" height="56" rx="8"/><text class="t" x="105" y="108">Phone</text><text class="s" x="105" y="128">Private IP</text></g>
+      <g id="router" class="nd home"><rect x="40" y="250" width="130" height="56" rx="8"/><text class="t" x="105" y="268">Home router</text><text class="s" x="105" y="288">Public IP, NAT</text></g>
+      <g id="r1" class="nd net"><rect x="225" y="100" width="80" height="44" rx="8"/><text class="t" x="265" y="122">Router</text></g>
+      <g id="r2" class="nd net"><rect x="225" y="180" width="80" height="44" rx="8"/><text class="t" x="265" y="202">Router</text></g>
+      <g id="r3" class="nd net"><rect x="225" y="260" width="80" height="44" rx="8"/><text class="t" x="265" y="282">Router</text></g>
+      <g id="dns" class="nd net"><rect x="225" y="322" width="80" height="36" rx="8"/><text class="t" x="265" y="340">DNS</text></g>
+      <g id="fw" class="nd rn"><rect x="360" y="82" width="280" height="44" rx="8"/><text class="t" x="500" y="104">Firewall</text></g>
+      <g id="lb" class="nd rn"><rect x="360" y="150" width="280" height="44" rx="8"/><text class="t" x="500" y="172">Load balancer</text></g>
+      <g id="rp" class="nd rn"><rect x="360" y="218" width="280" height="44" rx="8"/><text class="t" x="500" y="240">Reverse proxy</text></g>
+      <g id="app" class="nd rn"><rect x="360" y="292" width="132" height="56" rx="8"/><text class="t" x="426" y="310">App server</text><text class="s" x="426" y="330">Ride service</text></g>
+      <g id="db" class="nd rn"><rect x="514" y="292" width="126" height="56" rx="8"/><text class="t" x="577" y="310">Database</text><text class="s" x="577" y="330">Private subnet</text></g>
+      <circle id="dot" cx="0" cy="0" r="7" stroke-width="1"/>
+    </svg>
+  </div>
+
+  <section class="reader" aria-live="polite">
+    <div class="nav">
+      <button class="btn ghost" id="prev" type="button">← Back</button>
+      <span class="count" id="count"></span>
+      <button class="btn" id="next" type="button">Next →</button>
+    </div>
+    <h2 id="ttl"></h2>
+    <div class="blk"><span class="lab">In plain English</span><p id="pl"></p></div>
+    <div class="blk"><span class="lab">Analogy</span><p id="an"></p></div>
+    <div class="blk story"><span class="lab">In the rideshare story</span><p id="rs"></p></div>
+    <div class="dots" id="dots" aria-label="Jump to a step"></div>
+    <p class="keys">Use the ← and → keys to move between steps.</p>
+  </section>
+</div>
+
+<script>
+const P={phone:[105,118],router:[105,278],r1:[265,122],r2:[265,202],r3:[265,282],dns:[265,340],fw:[500,104],lb:[500,172],rp:[500,240],app:[426,320],db:[577,320]};
+const ALL=Object.keys(P);
+const S=[
+["Start: tap \"Request Ride\"",ALL,"phone","One tap kicks off a trip across many networks. Each step below solves one problem along the way.","Like mailing a package: it needs an address, a route, and someone at the other end to open it.","The passenger at home taps Request Ride. Let's follow that request."],
+["1. IP address",["phone"],"phone","A number that says where a device can be reached right now. IPv4 is the older, smaller pool; IPv6 is a much bigger one.","Your home mailing address. It changes if you move, like your phone getting a new IP on cell data.","The phone needs an address so RideNow's reply can find its way back."],
+["2. Private vs public IP",["phone","router"],"phone","Private IPs only work inside your home network. A public IP can be reached from the whole internet.","\"Apartment 12\" only makes sense inside the building. The post office needs the building's street address.","The phone has a private IP. The house shares one public IP on the router."],
+["3. DNS",["phone","dns"],"dns","Turns a name into the IP address computers use. The answer is saved for a while (TTL).","Your phone's contacts list: tap \"Mom\" and it finds her number for you.","The app knows RideNow's name, not its number. DNS looks up the number."],
+["4. Ports",["app"],"app","The IP finds the machine. The port picks which program on that machine gets the data.","The IP is the building, the port is the apartment number.","The request is aimed at the ride service, not some other program on the server."],
+["5. MAC address",["phone","router"],"phone","A hardware ID on each network card, used to deliver data inside the local network.","IP is the street address; MAC is the name on the mailbox inside the building.","To hand data to the home router over Wi-Fi, the phone needs the router's MAC."],
+["6. ARP",["phone","router"],"router","Asks the local network \"Who has this IP?\" and gets back the matching MAC address.","Calling out in a classroom, \"Who's in seat 14?\" and someone raises their hand.","The phone asks who owns the router's IP, and the router answers with its MAC."],
+["7. Routing",["r1","r2","r3"],"r2","Routers pass data along one hop at a time. Each one only picks the next stop.","A package going from post office to sorting center to sorting center. A slow center means slow delivery.","The request hops across several networks to reach RideNow."],
+["8. NAT",["router"],"router","The router swaps your private IP for the public one going out, and remembers who asked.","An office receptionist: all calls go out on the main number, and replies get transferred back.","The home router sends the request out under the house's public IP."],
+["9. Subnetting",["app","db"],"db","Splitting a network into fenced-off sections so you control what talks to what.","An office building with keycard floors. The server room is locked.","RideNow keeps its database in a private section only app servers can reach."],
+["10. DHCP",["phone","router"],"phone","Automatically hands a device its IP, gateway and DNS server when it joins.","Hotel check-in: the front desk gives you a room number and directions.","The phone got its settings from the router the moment it joined Wi-Fi."],
+["11. TCP",["phone","app"],"app","Reliable delivery: everything arrives, in order, and lost pieces get resent.","Tracked, signature-required shipping.","A ride request must arrive complete, so it uses TCP."],
+["12. Three-way handshake",["phone","app"],"phone","Three quick messages open a TCP connection: SYN, SYN-ACK, ACK.","\"Can you hear me?\" \"Yes, can you hear me?\" \"Yep.\" Then the real talk starts.","Phone and server greet each other before sending the ride request."],
+["13. HTTPS and TLS",["phone","rp"],"rp","Scrambles the data so others can't read it and proves the server is real with a certificate.","A locked box with a tamper seal and an ID badge, instead of a postcard.","Location, account and payment info stay private on the way there."],
+["14. HTTP",["phone","app"],"app","The ask-and-answer language of apps and websites: a request goes out, a response comes back.","Ordering at a restaurant: you order, the kitchen cooks, the waiter brings it back.","\"I need a ride from here to there.\" The server finds a driver and replies."],
+["15. Load balancer",["lb"],"lb","Spreads traffic across many servers and skips any that are broken.","The Costco worker sending you to an open checkout lane.","Millions of riders get spread across many app servers."],
+["16. Reverse proxy",["rp"],"rp","A smart front door: routes requests, handles encryption, caching and compression, and hides the inside.","A hotel concierge who sends each request to the right department.","It sends the ride request to the ride service, not the driver or payment service."],
+["17. Firewall",["fw","db"],"fw","Rules for which traffic is allowed in or out. Blocked traffic often just times out.","A gate guard with a guest list.","Riders can reach the app, but never the database directly."],
+["18. WebSockets",["phone","app"],"app","A connection that stays open so the server can push updates without being asked.","GPS announcing turns on its own, instead of a kid asking \"Are we there yet?\"","The driver's moving location is pushed to the passenger's map."],
+["19. UDP",["phone"],"phone","Faster delivery with no guarantees. Good when live matters more than perfect.","Live TV: a glitch isn't rewound, the show just keeps going.","Used for things like live voice or video. The ride request itself stays on TCP."],
+["20. OSI model",ALL,"router","7 layers used to troubleshoot in order, from cables up to the app.","Fixing a lamp: is it plugged in, is the outlet working, is the switch on, is the bulb good?","When something can't connect, check each layer instead of guessing."]
+];
+const $=id=>document.getElementById(id);
+let i=0;
+S.forEach((s,k)=>{const b=document.createElement("button");b.type="button";b.textContent=k===0?"▶":k;b.setAttribute("aria-label",s[0]);b.addEventListener("click",()=>{i=k;render();});$("dots").appendChild(b);});
+function render(){
+  const s=S[i];
+  document.querySelectorAll(".nd").forEach(n=>n.classList.toggle("dim",!s[1].includes(n.id)));
+  const p=P[s[2]];
+  $("dot").style.transform=`translate(${p[0]}px,${p[1]-36}px)`;
+  $("ttl").textContent=s[0]; $("pl").textContent=s[3]; $("an").textContent=s[4]; $("rs").textContent=s[5];
+  $("count").textContent=i===0?"Start":`Step ${i} of 20`;
+  $("prev").disabled=i===0; $("next").disabled=i===S.length-1;
+  [...$("dots").children].forEach((b,k)=>{ if(k===i) b.setAttribute("aria-current","step"); else b.removeAttribute("aria-current"); });
+}
+function go(d){i=Math.max(0,Math.min(S.length-1,i+d));render();}
+$("prev").addEventListener("click",()=>go(-1));
+$("next").addEventListener("click",()=>go(1));
+document.addEventListener("keydown",e=>{if(e.key==="ArrowRight")go(1);else if(e.key==="ArrowLeft")go(-1);});
+render();
+</script>
+</body></html>

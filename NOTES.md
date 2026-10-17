@@ -6,7 +6,11 @@ Study notes · October 17, 2026
 
 Networking is not 20 separate things to memorize. It is one request taking a trip, and each topic solves one problem along the way.
 
-These notes follow the Cloud X Berry video "I Bet Nobody Has Ever Explained the Networking Topics Like This Before" (Oct 13, 2026). The story: a passenger opens a rideshare app called RideNow and taps **Request Ride**. We follow that tap from the phone, through the home router, across the internet, and into RideNow's servers.
+These notes follow the Cloud X Berry video [I Bet Nobody Has Ever Explained the Networking Topics Like This Before](https://www.youtube.com/watch?v=TR0RU2pmMeA) (Oct 13, 2026). The story: a passenger opens a rideshare app called RideNow and taps **Request Ride**. We follow that tap from the phone, through the home router, across the internet, and into RideNow's servers.
+
+![One ride request, start to finish: phone and home router, internet routers, then RideNow's firewall, load balancer, reverse proxy, app server and database](journey.svg)
+
+Want to click through it step by step? Open [journey.html](journey.html).
 
 Each topic has the same parts:
 

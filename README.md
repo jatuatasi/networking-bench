@@ -4,12 +4,16 @@ Study kit for networking basics, built around one idea: follow a single request 
 
 Made for CompTIA A+ prep, with a head start on Network+ and CCNA.
 
+![One ride request, start to finish](journey.svg)
+
 ## What's inside
 
 | File | What it is |
 | --- | --- |
 | `index.html` | **Networking Bench** practice test. 73 questions, a new random mix every round, answer choices shuffled. |
 | `flashcards.html` | **Networking Flashcards**. 42 flip cards with "Got it" and "Still learning" piles. |
+| `journey.html` | **Ride Request Journey**. Click through the trip one step at a time and watch the request move across the map. |
+| `journey.svg` | The trip as a picture, shown in the notes and this README. |
 | `NOTES.md` | Full study notes: all 20 steps, the trip start to finish, and a cheat sheet of ports, Windows commands and troubleshooting clues. |
 
 ## Practice test features
@@ -41,6 +45,7 @@ Both pages are single HTML files with no install. Download the repo and double-c
 4. After a minute or two, the page shows your link, like `https://<your-username>.github.io/networking-bench/`.
    - Practice test: that link
    - Flashcards: add `flashcards.html` to the end
+   - Step-by-step journey: add `journey.html` to the end
 
 ## Topics covered
 
@@ -67,4 +72,4 @@ Both pages are single HTML files with no install. Download the repo and double-c
 
 ## Credit
 
-The rideshare story follows the Cloud X Berry YouTube video "I Bet Nobody Has Ever Explained the Networking Topics Like This Before" (Oct 13, 2026). Notes, questions and flashcards are original study material.
+The rideshare story follows the Cloud X Berry YouTube video [I Bet Nobody Has Ever Explained the Networking Topics Like This Before](https://www.youtube.com/watch?v=TR0RU2pmMeA) (Oct 13, 2026). Notes, questions and flashcards are original study material.
